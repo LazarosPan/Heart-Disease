@@ -59,3 +59,12 @@ def df_clean(df):
   num_df = num_df[num_df[df_columns].notnull().all(axis=1)]
 
   return num_df
+
+
+
+
+def show_value_counts(df):
+    for col in df.columns:
+        print(f"Column: {col} | Data Type: {df[col].dtype}")
+        print(df[col].value_counts())
+        print("\n")
