@@ -65,6 +65,48 @@ def df_clean(df):
 
 def show_value_counts(df):
     for col in df.columns:
-        print(f"Column: {col} | Data Type: {df[col].dtype}")
+        print(f"Data Type: {df[col].dtype}")
         print(df[col].value_counts())
         print("\n")
+
+
+### needs improvement to handle all of the data types available in pandas
+def fill_missing_values(df, label_column):
+    cat_columns = ['object', 'category', 'string']
+    filled_values = df.drop(label_column, axis=1).apply(lambda x: x.mode().iloc[0] if x.dtype.name in cat_columns else x.mean())
+    
+    fill_dict = {}
+    for col in df.columns:
+        if col != label_column:
+            if df[col].dtype.name in cat_columns:
+                fill_values = df.groupby(label_column)[col].apply(lambda x: x.mode().iloc[0])
+                df[col].fillna(df[label_column].map(fill_values), inplace=True)
+                fill_dict[col] = fill_values.to_dict()
+            else:
+                fill_values = df.groupby(label_column)[col].mean()
+                df[col].fillna(df[label_column].map(fill_values), inplace=True)
+                fill_dict[col] = fill_values.to_dict()
+    
+    print("Filled values:")
+    for col, fill_value in fill_dict.items():
+        print(f"Column: {col}")
+        print(f"Values filled: {fill_value}")
+        print()
+    
+    return df
+
+
+# def fill_missing_values(df, label_column):
+#     cat_columns = ['object', 'category', 'string']
+#     filled_values = df.drop(label_column, axis=1).apply(lambda x: x.mode().iloc[0] if x.dtype.name in cat_columns else x.mean())
+    
+#     for col in df.columns:
+#         if col != label_column:
+#             if df[col].dtype.name in cat_columns:
+#                 fill_values = df.groupby(label_column)[col].apply(lambda x: x.mode().iloc[0])
+#                 df[col].fillna(df[label_column].map(fill_values), inplace=True)
+#             else:
+#                 fill_values = df.groupby(label_column)[col].mean()
+#                 df[col].fillna(df[label_column].map(fill_values), inplace=True)
+    
+#     return df
