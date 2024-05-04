@@ -71,29 +71,55 @@ def show_value_counts(df):
 
 
 ### needs improvement to handle all of the data types available in pandas
-def fill_missing_values(df, label_column):
+
+def fill_missing_values(df_train, label_column, df_test=None, fill_categorical='mode', fill_numeric='mean'):
+    """
+    Fill missing values in a DataFrame.
+
+    Parameters:
+    - df_train (DataFrame): The training DataFrame.
+    - label_column (str): The label column.
+    - df_test (DataFrame, optional): The test DataFrame. Default is None.
+    - fill_categorical (str, optional): Method to fill missing values in categorical columns.
+        Options: 'mode' (default), 'most_frequent'.
+    - fill_numeric (str, optional): Method to fill missing values in numeric columns.
+        Options: 'mean' (default), 'median', 'most_frequent'.
+
+    Returns:
+    - df_train_filled (DataFrame): The training DataFrame with missing values filled.
+    - df_test_filled (DataFrame): The test DataFrame with missing values filled.
+    - filled_df (DataFrame): A DataFrame showing the filled values for each column.
+    """
     cat_columns = ['object', 'category', 'string']
-    filled_values = df.drop(label_column, axis=1).apply(lambda x: x.mode().iloc[0] if x.dtype.name in cat_columns else x.mean())
     
     fill_dict = {}
-    for col in df.columns:
+    
+    for col in df_train.columns:
         if col != label_column:
-            if df[col].dtype.name in cat_columns:
-                fill_values = df.groupby(label_column)[col].apply(lambda x: x.mode().iloc[0])
-                df[col].fillna(df[label_column].map(fill_values), inplace=True)
+            if df_train[col].dtype.name in cat_columns:
+                if fill_categorical == 'mode':
+                    fill_values = df_train.groupby(label_column)[col].apply(lambda x: x.mode().iloc[0])
+                else:
+                    fill_values = df_train.groupby(label_column)[col].apply(lambda x: x.value_counts().index[0])
+                df_train[col].fillna(df_train[label_column].map(fill_values), inplace=True)
                 fill_dict[col] = fill_values.to_dict()
+                if df_test is not None:
+                    df_test[col].fillna(df_test[label_column].map(fill_values), inplace=True)
             else:
-                fill_values = df.groupby(label_column)[col].mean()
-                df[col].fillna(df[label_column].map(fill_values), inplace=True)
+                if fill_numeric == 'mean':
+                    fill_values = df_train.groupby(label_column)[col].mean()
+                elif fill_numeric == 'median':
+                    fill_values = df_train.groupby(label_column)[col].median()
+                else:
+                    fill_values = df_train.groupby(label_column)[col].apply(lambda x: x.mode().iloc[0])
+                df_train[col].fillna(df_train[label_column].map(fill_values), inplace=True)
                 fill_dict[col] = fill_values.to_dict()
+                if df_test is not None:
+                    df_test[col].fillna(df_test[label_column].map(fill_values), inplace=True)
     
-    print("Filled values:")
-    for col, fill_value in fill_dict.items():
-        print(f"Column: {col}")
-        print(f"Values filled: {fill_value}")
-        print()
+    filled_df = pd.DataFrame(fill_dict)
     
-    return df
+    return df_train, df_test, filled_df
 
 
 # def fill_missing_values(df, label_column):
