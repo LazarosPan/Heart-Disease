@@ -3,9 +3,11 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import cross_validate
 import statistics as stats
 from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
-from sklearn.metrics import make_scorer, f1_score
+from sklearn.metrics import make_scorer, accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, balanced_accuracy_score
 import seaborn as sns # data visualization library
 import matplotlib.pyplot as plt
+import pandas as pd
+import time
 
 def train_classifiers(classifiers, x, y, cv, scoring, scaler=None):
   """
@@ -118,6 +120,39 @@ def plot_metrics(df):
     for container in fit_time.containers:
         fit_time.bar_label(container)
     plt.show()
+
+
+
+def train_evaluate_single(model, X_train, y_train, X_test, y_test, classifier_name):
+    # Record the start time
+    start_time = time.time()
+    
+    # Train the model
+    model.fit(X_train, y_train)
+    
+    # Record the end time
+    end_time = time.time()
+    
+    # Calculate the fit time
+    fit_time = end_time - start_time
+    
+    # Predict on the test set
+    y_pred = model.predict(X_test)
+    y_pred_prob = model.predict_proba(X_test)[:, 1]
+    
+    # Calculate metrics
+    metrics = {
+        "classifier": classifier_name,
+        "accuracy": accuracy_score(y_test, y_pred),
+        "balanced_accuracy": balanced_accuracy_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred),
+        "recall": recall_score(y_test, y_pred),
+        "f1_score": f1_score(y_test, y_pred),
+        "roc_auc": roc_auc_score(y_test, y_pred_prob),
+        "fit_time": fit_time
+    }
+    
+    return metrics
 
 # def train_classifiers_tuned(classifiers, x, y, cv, search_cv, scoring, param_grid, scaler=None):
 #     results = {}
